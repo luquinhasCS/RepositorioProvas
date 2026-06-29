@@ -1,3 +1,3 @@
-﻿module.exports = (req, res) => {
-    res.status(200).json({ ok: true });
-};
+﻿const app = require("../src/app");
+
+module.exports = app;

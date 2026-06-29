@@ -49,15 +49,15 @@ function toDto(item) {
     if (!item) return null;
 
     return {
-        id: item.Id,
-        materia: item.Materia,
-        professor: item.Professor,
-        ano: item.Ano,
-        arquivoNome: item.ArquivoNome,
-        arquivoTipo: item.ArquivoTipo,
-        dataCriacao: item.DataCriacao,
-        dataAtualizacao: item.DataAtualizacao,
-        arquivoUrl: `/api/provas/${item.Id}/arquivo`
+        id: item.id,
+        materia: item.materia,
+        professor: item.professor,
+        ano: item.ano,
+        arquivoNome: item.arquivo_nome,
+        arquivoTipo: item.arquivo_tipo,
+        dataCriacao: item.data_criacao,
+        dataAtualizacao: item.data_atualizacao,
+        arquivoUrl: `/api/provas/${item.id}/arquivo`
     };
 }
 
@@ -68,7 +68,11 @@ async function listar(filtros) {
 
 async function buscarPorId(id) {
     const item = await repository.buscarPorId(id);
-    if (!item) return null;
+
+    if (!item) {
+        return null;
+    }
+
     return toDto(item);
 }
 
@@ -109,17 +113,20 @@ async function atualizar(id, req) {
 }
 
 async function remover(id) {
-    return await repository.remover(id);
+    return repository.remover(id);
 }
 
 async function obterArquivo(id) {
     const item = await repository.buscarPorId(id);
-    if (!item) return null;
+
+    if (!item) {
+        return null;
+    }
 
     return {
-        nome: item.ArquivoNome,
-        tipo: item.ArquivoTipo,
-        dados: item.ArquivoDados
+        nome: item.arquivo_nome,
+        tipo: item.arquivo_tipo,
+        dados: item.arquivo_dados
     };
 }
 

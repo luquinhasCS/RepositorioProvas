@@ -1,129 +1,203 @@
-﻿const { sql, getPool } = require("../config/database");
+﻿const pool = require("../config/database");
 
 async function listar({ materia, professor, ano }) {
-    const pool = await getPool();
 
     let query = `
-    SELECT 
-      Id, Materia, Professor, Ano, ArquivoNome, ArquivoTipo, DataCriacao, DataAtualizacao
-    FROM Provas
-    WHERE 1=1
-  `;
+        SELECT
+            id,
+            materia,
+            professor,
+            ano,
+            arquivo_nome,
+            arquivo_tipo,
+            data_criacao,
+            data_atualizacao
+        FROM provas
+        WHERE 1=1
+    `;
 
-    const request = pool.request();
+    const parametros = [];
+    let indice = 1;
 
     if (materia) {
-        query += " AND Materia LIKE @Materia";
-        request.input("Materia", sql.NVarChar, `%${materia}%`);
+        query += ` AND materia ILIKE $${indice++}`;
+        parametros.push(`%${materia}%`);
     }
 
     if (professor) {
-        query += " AND Professor LIKE @Professor";
-        request.input("Professor", sql.NVarChar, `%${professor}%`);
+        query += ` AND professor ILIKE $${indice++}`;
+        parametros.push(`%${professor}%`);
     }
 
     if (ano) {
-        query += " AND Ano = @Ano";
-        request.input("Ano", sql.Int, Number(ano));
-    }
-
-    query += " ORDER BY Ano DESC, Materia ASC, Professor ASC";
-
-    const result = await request.query(query);
-    return result.recordset;
-}
-
-async function buscarPorId(id) {
-    const pool = await getPool();
-
-    const result = await pool
-        .request()
-        .input("Id", sql.Int, Number(id))
-        .query(`
-      SELECT 
-        Id, Materia, Professor, Ano, ArquivoNome, ArquivoTipo, ArquivoDados,
-        DataCriacao, DataAtualizacao
-      FROM Provas
-      WHERE Id = @Id
-    `);
-
-    return result.recordset[0] || null;
-}
-
-async function criar({ materia, professor, ano, arquivoNome, arquivoTipo, arquivoDados }) {
-    const pool = await getPool();
-
-    const result = await pool
-        .request()
-        .input("Materia", sql.NVarChar, materia)
-        .input("Professor", sql.NVarChar, professor)
-        .input("Ano", sql.Int, Number(ano))
-        .input("ArquivoNome", sql.NVarChar, arquivoNome)
-        .input("ArquivoTipo", sql.NVarChar, arquivoTipo)
-        .input("ArquivoDados", sql.VarBinary(sql.MAX), arquivoDados)
-        .query(`
-      INSERT INTO Provas (Materia, Professor, Ano, ArquivoNome, ArquivoTipo, ArquivoDados)
-      OUTPUT INSERTED.Id, INSERTED.Materia, INSERTED.Professor, INSERTED.Ano, INSERTED.ArquivoNome, INSERTED.ArquivoTipo, INSERTED.DataCriacao, INSERTED.DataAtualizacao
-      VALUES (@Materia, @Professor, @Ano, @ArquivoNome, @ArquivoTipo, @ArquivoDados)
-    `);
-
-    return result.recordset[0];
-}
-
-async function atualizar(id, { materia, professor, ano, arquivoNome, arquivoTipo, arquivoDados }) {
-    const pool = await getPool();
-
-    const request = pool
-        .request()
-        .input("Id", sql.Int, Number(id))
-        .input("Materia", sql.NVarChar, materia)
-        .input("Professor", sql.NVarChar, professor)
-        .input("Ano", sql.Int, Number(ano));
-
-    let query = `
-    UPDATE Provas
-    SET 
-      Materia = @Materia,
-      Professor = @Professor,
-      Ano = @Ano,
-      DataAtualizacao = SYSDATETIME()
-  `;
-
-    if (arquivoDados && arquivoNome && arquivoTipo) {
-        query += `,
-      ArquivoNome = @ArquivoNome,
-      ArquivoTipo = @ArquivoTipo,
-      ArquivoDados = @ArquivoDados
-    `;
-
-        request
-            .input("ArquivoNome", sql.NVarChar, arquivoNome)
-            .input("ArquivoTipo", sql.NVarChar, arquivoTipo)
-            .input("ArquivoDados", sql.VarBinary(sql.MAX), arquivoDados);
+        query += ` AND ano = $${indice++}`;
+        parametros.push(Number(ano));
     }
 
     query += `
-    OUTPUT INSERTED.Id, INSERTED.Materia, INSERTED.Professor, INSERTED.Ano, INSERTED.ArquivoNome, INSERTED.ArquivoTipo, INSERTED.DataCriacao, INSERTED.DataAtualizacao
-    WHERE Id = @Id
-  `;
+        ORDER BY
+            ano DESC,
+            materia ASC,
+            professor ASC
+    `;
 
-    const result = await request.query(query);
-    return result.recordset[0] || null;
+    const { rows } = await pool.query(query, parametros);
+
+    return rows;
+}
+
+async function buscarPorId(id) {
+
+    const { rows } = await pool.query(
+        `
+        SELECT
+            id,
+            materia,
+            professor,
+            ano,
+            arquivo_nome,
+            arquivo_tipo,
+            arquivo_dados,
+            data_criacao,
+            data_atualizacao
+        FROM provas
+        WHERE id = $1
+        `,
+        [id]
+    );
+
+    return rows[0] || null;
+}
+
+async function criar({
+    materia,
+    professor,
+    ano,
+    arquivoNome,
+    arquivoTipo,
+    arquivoDados
+}) {
+
+    const { rows } = await pool.query(
+        `
+        INSERT INTO provas
+        (
+            materia,
+            professor,
+            ano,
+            arquivo_nome,
+            arquivo_tipo,
+            arquivo_dados
+        )
+        VALUES
+        (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6
+        )
+        RETURNING
+            id,
+            materia,
+            professor,
+            ano,
+            arquivo_nome,
+            arquivo_tipo,
+            data_criacao,
+            data_atualizacao
+        `,
+        [
+            materia,
+            professor,
+            Number(ano),
+            arquivoNome,
+            arquivoTipo,
+            arquivoDados
+        ]
+    );
+
+    return rows[0];
+}
+
+async function atualizar(
+    id,
+    {
+        materia,
+        professor,
+        ano,
+        arquivoNome,
+        arquivoTipo,
+        arquivoDados
+    }
+) {
+
+    const parametros = [
+        materia,
+        professor,
+        Number(ano)
+    ];
+
+    let indice = 4;
+
+    let query = `
+        UPDATE provas
+        SET
+            materia = $1,
+            professor = $2,
+            ano = $3,
+            data_atualizacao = NOW()
+    `;
+
+    if (arquivoDados) {
+
+        query += `
+            ,
+            arquivo_nome = $${indice++},
+            arquivo_tipo = $${indice++},
+            arquivo_dados = $${indice++}
+        `;
+
+        parametros.push(
+            arquivoNome,
+            arquivoTipo,
+            arquivoDados
+        );
+    }
+
+    parametros.push(id);
+
+    query += `
+        WHERE id = $${indice}
+
+        RETURNING
+            id,
+            materia,
+            professor,
+            ano,
+            arquivo_nome,
+            arquivo_tipo,
+            data_criacao,
+            data_atualizacao
+    `;
+
+    const { rows } = await pool.query(query, parametros);
+
+    return rows[0] || null;
 }
 
 async function remover(id) {
-    const pool = await getPool();
 
-    const result = await pool
-        .request()
-        .input("Id", sql.Int, Number(id))
-        .query(`
-      DELETE FROM Provas
-      OUTPUT DELETED.Id
-      WHERE Id = @Id
-    `);
+    const { rowCount } = await pool.query(
+        `
+        DELETE FROM provas
+        WHERE id = $1
+        `,
+        [id]
+    );
 
-    return result.recordset.length > 0;
+    return rowCount > 0;
 }
 
 module.exports = {

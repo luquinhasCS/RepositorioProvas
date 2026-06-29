@@ -1,18 +1,20 @@
-CREATE DATABASE RepositorioProvas;
-GO
+CREATE TABLE provas
+(
+    id SERIAL PRIMARY KEY,
 
-USE RepositorioProvas;
-GO
+    materia VARCHAR(120) NOT NULL,
 
-CREATE TABLE Provas (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    Materia NVARCHAR(120) NOT NULL,
-    Professor NVARCHAR(120) NOT NULL,
-    Ano INT NOT NULL,
-    ArquivoNome NVARCHAR(260) NOT NULL,
-    ArquivoTipo NVARCHAR(100) NOT NULL,
-    ArquivoDados VARBINARY(MAX) NOT NULL,
-    DataCriacao DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    DataAtualizacao DATETIME2 NULL
+    professor VARCHAR(120) NOT NULL,
+
+    ano INTEGER NOT NULL,
+
+    arquivo_nome VARCHAR(260) NOT NULL,
+
+    arquivo_tipo VARCHAR(100) NOT NULL,
+
+    arquivo_dados BYTEA NOT NULL,
+
+    data_criacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    data_atualizacao TIMESTAMP NULL
 );
-GO
