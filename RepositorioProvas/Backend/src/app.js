@@ -5,12 +5,7 @@ const provasRoutes = require("./routes/provasRoutes");
 
 const app = express();
 
-app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        "https://repositorio-provas.vercel.app"
-    ]
-}));
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
