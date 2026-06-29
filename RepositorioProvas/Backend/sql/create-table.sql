@@ -1,0 +1,18 @@
+CREATE DATABASE RepositorioProvas;
+GO
+
+USE RepositorioProvas;
+GO
+
+CREATE TABLE Provas (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Materia NVARCHAR(120) NOT NULL,
+    Professor NVARCHAR(120) NOT NULL,
+    Ano INT NOT NULL,
+    ArquivoNome NVARCHAR(260) NOT NULL,
+    ArquivoTipo NVARCHAR(100) NOT NULL,
+    ArquivoDados VARBINARY(MAX) NOT NULL,
+    DataCriacao DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    DataAtualizacao DATETIME2 NULL
+);
+GO
